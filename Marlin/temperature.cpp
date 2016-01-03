@@ -1232,6 +1232,10 @@ static unsigned long raw_temp_value[4] = { 0 };
 static unsigned long raw_temp_bed_value = 0;
 
 static void set_current_temp_raw() {
+#ifdef HAKANS_LASER
+  raw_temp_value[0]  = 16000;
+  raw_temp_bed_value = 16000;
+#endif
   #if HAS_TEMP_0 && DISABLED(HEATER_0_USES_MAX6675)
     current_temperature_raw[0] = raw_temp_value[0];
   #endif
@@ -1250,6 +1254,7 @@ static void set_current_temp_raw() {
   #endif
   current_temperature_bed_raw = raw_temp_bed_value;
   temp_meas_ready = true;
+
 }
 
 /**

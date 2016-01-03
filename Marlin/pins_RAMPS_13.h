@@ -94,6 +94,10 @@
   #define FAN_PIN           4 // IO pin. Buffer needed
 #endif
 
+#ifdef HAKANS_LASER
+#define FAN_PIN 5
+#endif
+
 #define PS_ON_PIN          12
 
 #if ENABLED(REPRAP_DISCOUNT_SMART_CONTROLLER) || ENABLED(G3D_PANEL)

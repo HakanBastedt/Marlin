@@ -422,7 +422,9 @@ void check_axes_activity() {
   }
   if (DISABLE_X && !axis_active[X_AXIS]) disable_x();
   if (DISABLE_Y && !axis_active[Y_AXIS]) disable_y();
+  #ifndef HAKANS_LASER
   if (DISABLE_Z && !axis_active[Z_AXIS]) disable_z();
+  #endif
   if (DISABLE_E && !axis_active[E_AXIS]) {
     disable_e0();
     disable_e1();

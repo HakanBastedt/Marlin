@@ -268,6 +268,9 @@ float max_pos[3] = { X_MAX_POS, Y_MAX_POS, Z_MAX_POS };
 
 uint8_t active_extruder = 0;
 int fanSpeed = 0;
+#ifdef HAKANS_LASER
+int oldFanSpeed = 0;
+#endif
 bool cancel_heatup = false;
 
 const char errormagic[] PROGMEM = "Error:";
@@ -611,7 +614,9 @@ void servo_init() {
   }
   void enableStepperDrivers() { pinMode(STEPPER_RESET_PIN, INPUT); }  // set to input, which allows it to be pulled high by pullups
 #endif
-
+#ifdef HAKANS_LASER
+  static void set_axis_is_at_home(AxisEnum axis);
+#endif
 /**
  * Marlin entry-point: Set up before the program loop
  *  - Set up the kill pin, filament runout, power hold
@@ -634,6 +639,11 @@ void setup() {
   setup_killpin();
   setup_filrunoutpin();
   setup_powerhold();
+  #ifdef HAKANS_LASER
+    digitalWrite(9, LOW); // Laser 12V
+    digitalWrite(10, LOW); // Fan
+    digitalWrite(2, LOW); // Laser PWM
+  #endif
 
   #if HAS_STEPPER_RESET
     disableStepperDrivers();
@@ -720,6 +730,16 @@ void setup() {
   #ifdef STAT_LED_BLUE
     pinMode(STAT_LED_BLUE, OUTPUT);
     digitalWrite(STAT_LED_BLUE, LOW); // turn it off
+  #endif
+
+  #ifdef HAKANS_LASER
+    destination[Z_AXIS] = current_position[Z_AXIS] = 0;
+    set_axis_is_at_home(Z_AXIS);
+    plan_set_position(0,0,0,0);
+    axis_known_position[Z_AXIS] = true;
+    digitalWrite(9, LOW); // Laser 12V
+    digitalWrite(10, LOW); // Fan
+    digitalWrite(2, LOW); // Laser PWM
   #endif
 }
 
@@ -2099,6 +2119,12 @@ static void homeaxis(AxisEnum axis) {
  */
 void gcode_get_destination() {
   for (int i = 0; i < NUM_AXIS; i++) {
+    #ifdef HAKANS_LASER
+      if ( i == Z_AXIS ) {
+        destination[i] = 0;
+        continue;
+      }
+    #endif
     if (code_seen(axis_codes[i]))
       destination[i] = code_value() + (axis_relative_modes[i] || relative_mode ? current_position[i] : 0);
     else
@@ -2295,9 +2321,13 @@ inline void gcode_G28() {
     bool  homeX = code_seen(axis_codes[X_AXIS]),
           homeY = code_seen(axis_codes[Y_AXIS]),
           homeZ = code_seen(axis_codes[Z_AXIS]);
-
+          
     home_all_axis = (!homeX && !homeY && !homeZ) || (homeX && homeY && homeZ);
-
+  #ifdef HAKANS_LASER
+    homeZ = false;
+    if (!homeX && !homeY && !homeZ) homeX = homeY = true;
+    home_all_axis = false;
+  #endif
     if (home_all_axis || homeZ) {
 
       #if Z_HOME_DIR > 0  // If homing away from BED do Z first
@@ -3877,7 +3907,11 @@ inline void gcode_M105() {
   /**
    * M106: Set Fan Speed
    */
+#ifdef HAKANS_LASER
+  inline void gcode_M106() { if (code_seen('S')) fanSpeed = oldFanSpeed = constrain(code_value_short(), 0, 255); else fanSpeed = oldFanSpeed; }
+#else
   inline void gcode_M106() { fanSpeed = code_seen('S') ? constrain(code_value_short(), 0, 255) : 255; }
+#endif
 
   /**
    * M107: Fan Off
@@ -4207,7 +4241,9 @@ inline void gcode_M18_M84() {
       st_synchronize();
       if (code_seen('X')) disable_x();
       if (code_seen('Y')) disable_y();
+      #ifndef HAKANS_LASER
       if (code_seen('Z')) disable_z();
+      #endif
       #if ((E0_ENABLE_PIN != X_ENABLE_PIN) && (E1_ENABLE_PIN != Y_ENABLE_PIN)) // Only enable on boards that have seperate ENABLE_PINS
         if (code_seen('E')) {
           disable_e0();
@@ -6882,7 +6918,9 @@ void enable_all_steppers() {
 void disable_all_steppers() {
   disable_x();
   disable_y();
+  #ifndef HAKANS_LASER
   disable_z();
+  #endif
   disable_e0();
   disable_e1();
   disable_e2();
@@ -6932,7 +6970,9 @@ void manage_inactivity(bool ignore_stepper_queue/*=false*/) {
       disable_y();
     #endif
     #if DISABLE_Z == true
+    #ifndef HAKANS_LASER
       disable_z();
+    #endif
     #endif
     #if DISABLE_E == true
       disable_e0();
