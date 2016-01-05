@@ -534,6 +534,16 @@ static void lcd_implementation_status_screen() {
     lcd_printPGM(PSTR(LCD_STR_DEGREE " ")); \
     if (T2 < 10) lcd.print(' ')
 
+#ifdef LASER
+  // Laser line 1
+	lcd.setCursor(0, 0);
+	lcd.print("Laser Power: ");
+	lcd.print(itostr3(int(laser.intensity)));
+	lcd.print(itostr3(int(laser.status)));
+
+#else
+
+
   //
   // Line 1
   //
