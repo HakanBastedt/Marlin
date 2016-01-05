@@ -34,7 +34,7 @@
   #define SERVO0_PIN        7 // RAMPS_13 // Will conflict with BTN_EN2 on LCD_I2C_VIKI
 #endif
 #define SERVO1_PIN          6
-#define SERVO2_PIN          5
+#define SERVO2_PIN          -1
 #define SERVO3_PIN          4
 
 #define X_STEP_PIN         54
@@ -70,7 +70,7 @@
 #if ENABLED(FILAMENT_SENSOR)  // FMM added for Filament Extruder
   // define analog pin for the filament width sensor input
   // Use the RAMPS 1.4 Analog input 5 on the AUX2 connector
-  #define FILWIDTH_PIN      5
+  #define FILWIDTH_PIN      -1
 #endif
 
 #if ENABLED(Z_MIN_PROBE_ENDSTOP)
@@ -95,7 +95,7 @@
 #endif
 
 #ifdef HAKANS_LASER
-#define FAN_PIN 5
+#define FAN_PIN 6
 #endif
 
 #define PS_ON_PIN          12
@@ -261,6 +261,23 @@
   #endif // !NEWPANEL
 
 #endif // ULTRA_LCD
+
+#ifdef LASER
+#if LASER_CONTROL == 1
+#define LASER_FIRING_PIN    5
+#endif
+#if LASER_CONTROL == 2
+#define LASER_INTENSITY_PIN 6 // Digital pins 2, 3, 5, 6, 7, 8 are attached to timers we can use
+#define LASER_FIRING_PIN	5
+#endif
+#ifdef LASER_POWER_DOWN
+#define LASER_POWER_PIN 9 // This is currently hard-coded to timer2 which services pins 9, 10
+#endif // LASER_POWER_DOWN
+#ifdef LASER_PERIPHERALS
+#define LASER_PERIPHERALS_PIN       4
+#define LASER_PERIPHERALS_STATUS_PIN		  11
+#endif // LASER_PERIPHERALS
+#endif // LASER
 
 // SPI for Max6675 Thermocouple
 #if DISABLED(SDSUPPORT)

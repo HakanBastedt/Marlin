@@ -33,6 +33,9 @@
 #if HAS_DIGIPOTSS
   #include <SPI.h>
 #endif
+#ifdef LASER
+#include "laser.h"
+#endif // LASER
 
 //===========================================================================
 //============================= public variables ============================
@@ -54,6 +57,14 @@ static unsigned int cleaning_buffer_counter;
               locked_z_motor = false,
               locked_z2_motor = false;
 #endif
+
+#ifdef LASER
+static long counter_l_1000;
+#endif // LASER
+
+#ifdef LASER_RASTER
+static int counter_raster;
+#endif // LASER_RASTER
 
 // Counter variables for the Bresenham line tracer
 static long counter_x, counter_y, counter_z, counter_e;
@@ -600,6 +611,13 @@ FORCE_INLINE void trapezoid_generator_reset() {
 // It pops blocks from the block_buffer and executes them by pulsing the stepper pins appropriately.
 ISR(TIMER1_COMPA_vect) {
 
+  #ifdef LASER
+  if (laser.dur != 0 && (laser.last_firing + laser.dur < micros())) {
+    if (laser.diagnostics) SERIAL_ECHOLN("Laser firing duration elapsed, in interrupt handler");
+	laser_extinguish();
+  }
+  #endif LASER
+
   if (cleaning_buffer_counter) {
     current_block = NULL;
     plan_discard_current_block();
@@ -621,14 +639,32 @@ ISR(TIMER1_COMPA_vect) {
       counter_x = -(current_block->step_event_count >> 1);
       counter_y = counter_z = counter_e = counter_x;
       step_events_completed = 0;
+      #ifdef LASER
+      counter_l_1000 = 1000*counter_x;
+      laser.dur = current_block->laser_duration;
+      #endif //LASER
 
       #if ENABLED(Z_LATE_ENABLE)
         if (current_block->steps[Z_AXIS] > 0) {
           enable_z();
           OCR1A = 2000; //1ms wait
           return;
+        } 
+     #endif
+      #ifdef LASER_RASTER
+        if (current_block->laser_mode == RASTER) {
+          counter_raster = 0;
         }
-      #endif
+      #endif // LASER_RASTER
+#define NL SERIAL_ECHOLN("")
+#if 0
+	NL;
+	SERIAL_ECHOPAIR(" last_firing=",laser.last_firing); 
+	SERIAL_ECHOPAIR(" dur=",laser.dur); 
+	SERIAL_ECHOPAIR(" steps_l_1000=",current_block->steps_l_1000); 
+	SERIAL_ECHOPAIR(" millimeters=", 1000*current_block->millimeters);NL;
+	SERIAL_ECHOPAIR(" now", micros());NL;
+#endif
 
       // #if ENABLED(ADVANCE)
       //   e_steps[current_block->active_extruder] = 0;
@@ -640,6 +676,17 @@ ISR(TIMER1_COMPA_vect) {
   }
 
   if (current_block != NULL) {
+
+    #ifdef LASER
+      if (current_block->laser_mode == CONTINUOUS && current_block->laser_status == LASER_ON) {
+        //laser_fire(current_block->laser_intensity);
+      }
+      if (current_block->laser_status == LASER_OFF) {
+        if (laser.diagnostics)
+	  SERIAL_ECHOLN("Laser status set to off, in interrupt handler");
+        laser_extinguish();
+      }
+    #endif // LASER
 
     // Update endstops state, if enabled
     if (check_endstops) update_endstops();
@@ -686,6 +733,37 @@ ISR(TIMER1_COMPA_vect) {
       #if DISABLED(ADVANCE)
         STEP_IF_COUNTER(e, E);
       #endif
+      // steps_l_1000 = step count between laser firings in 1/1000's
+      //
+      #ifdef LASER
+	counter_l_1000 += current_block->steps_l_1000;
+	if (counter_l_1000 > 0) {
+          if (current_block->laser_mode == PULSED && current_block->laser_status == LASER_ON) { // Pulsed Firing Mode
+            //laser_fire(current_block->laser_intensity);
+	    if (laser.diagnostics) {
+              SERIAL_ECHOPAIR("X: ", counter_x);
+	      SERIAL_ECHOPAIR("Y: ", counter_y);
+	      SERIAL_ECHOPAIR("L: ", counter_l_1000);
+            }
+          }
+      #ifdef LASER_RASTER
+	  if (current_block->laser_mode == RASTER && current_block->laser_status == LASER_ON) { // Raster Firing Mode
+	    unsigned char v = current_block->laser_raster_data[counter_raster];
+            laser_fire(v); //For some reason, when comparing raster power to ppm line burns the rasters were around 2% more powerful - going from darkened paper to burning through paper.
+
+            if (laser.diagnostics) {
+	      SERIAL_ECHOPAIR("Pixel: ", (float)current_block->laser_raster_data[counter_raster]);
+	    }
+	    counter_raster++;
+	  }
+      #endif // LASER_RASTER
+		  counter_l_1000 -= 1000*current_block->step_event_count;
+		  }
+		  if (current_block->laser_duration != 0 && (laser.last_firing + current_block->laser_duration < micros())) {
+			if (laser.diagnostics) SERIAL_ECHOLN("Laser firing duration elapsed, in interrupt fast loop");
+		    laser_extinguish();
+		  }
+      #endif // LASER
 
       step_events_completed++;
       if (step_events_completed >= current_block->step_event_count) break;
