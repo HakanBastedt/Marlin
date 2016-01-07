@@ -679,7 +679,7 @@ ISR(TIMER1_COMPA_vect) {
 
     #ifdef LASER
       if (current_block->laser_mode == CONTINUOUS && current_block->laser_status == LASER_ON) {
-        //laser_fire(current_block->laser_intensity);
+        laser_fire(current_block->laser_intensity);
       }
       if (current_block->laser_status == LASER_OFF) {
         if (laser.diagnostics)
@@ -739,7 +739,7 @@ ISR(TIMER1_COMPA_vect) {
 	counter_l_1000 += current_block->steps_l_1000;
 	if (counter_l_1000 > 0) {
           if (current_block->laser_mode == PULSED && current_block->laser_status == LASER_ON) { // Pulsed Firing Mode
-            //laser_fire(current_block->laser_intensity);
+            laser_fire(current_block->laser_intensity);
 	    if (laser.diagnostics) {
               SERIAL_ECHOPAIR("X: ", counter_x);
 	      SERIAL_ECHOPAIR("Y: ", counter_y);

@@ -24,43 +24,34 @@
 #include <avr/interrupt.h>
 #include <Arduino.h>
 #include "Marlin.h"
+#include "TimerThree.h"
 
 laser_t laser;
 
-void timer3_init(int pin) {
-	pinMode(pin, OUTPUT);
-    analogWrite(pin, 1);  // let Arduino setup do it's thing to the PWM pin
-
-    TCCR3B = 0x00;  // stop Timer4 clock for register updates
-    TCCR3A = 0x82; // Clear OC3A on match, fast PWM mode, lower WGM3x=14
-    ICR3 = labs(F_CPU / LASER_PWM); // clock cycles per PWM pulse
-    OCR3A = labs(F_CPU / LASER_PWM) - 1; // ICR3 - 1 force immediate compare on next tick
-    TCCR3B = 0x18 | 0x01; // upper WGM4x = 14, clock sel = prescaler, start running
-
-    noInterrupts();
-    TCCR3B &= 0xf8; // stop timer, OC3A may be active now
-    TCNT3 = labs(F_CPU / LASER_PWM); // force immediate compare on next tick
-    ICR3 = labs(F_CPU / LASER_PWM); // set new PWM period
-    TCCR3B |= 0x01; // start the timer with proper prescaler value
-    interrupts();
+#define bit(x) (1 << x)
+void timer3_init(int pin) 
+{
+  Timer3.initialize();
+  Timer3.setPeriod(1000000/LASER_PWM);
+  Timer3.pwm(pin,0);
 }
 
-void timer4_init(int pin) {
-	pinMode(pin, OUTPUT);
-    analogWrite(pin, 1);  // let Arduino setup do it's thing to the PWM pin
+void timer4_init(int pin) 
+{
+    pinMode(pin, OUTPUT);
 
-    TCCR4B = 0x00;  // stop Timer4 clock for register updates
-    TCCR4A = 0x82; // Clear OC4A on match, fast PWM mode, lower WGM4x=14
-    ICR4 = labs(F_CPU / LASER_PWM); // clock cycles per PWM pulse
-    OCR4A = labs(F_CPU / LASER_PWM) - 1; // ICR4 - 1 force immediate compare on next tick
-    TCCR4B = 0x18 | 0x01; // upper WGM4x = 14, clock sel = prescaler, start running
-
+    // WGM4 = 1110
+    // CS   = 001  No prescaler (1) 
+    unsigned char sreg = SREG;  //  Begin atomic section
     noInterrupts();
-    TCCR4B &= 0xf8; // stop timer, OC4A may be active now
-    TCNT4 = labs(F_CPU / LASER_PWM); // force immediate compare on next tick
-    ICR4 = labs(F_CPU / LASER_PWM); // set new PWM period
-    TCCR4B |= 0x01; // start the timer with proper prescaler value
-    interrupts();
+
+    TCCR4B  = 0; // Stop
+    TCCR4A  = bit(COM4A1) | bit(COM4B1) | bit(COM4C1) | bit(WGM41); // Fast PWM, TOP input = ICR4
+    ICR4    = labs(F_CPU / LASER_PWM);   // Pwm frequency
+    TCCR4B  = bit(WGM43) | bit(WGM42) | bit(CS40); // Start
+
+    SREG = sreg;
+    digitalWrite(pin, LOW);
 }
 
 void laser_init()
@@ -83,11 +74,8 @@ void laser_init()
   pinMode(LASER_PERIPHERALS_STATUS_PIN, INPUT);
   #endif // LASER_PERIPHERALS
 
-  digitalWrite(LASER_FIRING_PIN, LASER_UNARM);  // Laser FIRING is active LOW, so preset the pin
-  pinMode(LASER_FIRING_PIN, OUTPUT);
-
   // initialize state to some sane defaults
-  laser.intensity = 100.0;
+  laser.intensity = 0.0;
   laser.ppm = 0.0;
   laser.duration = 0;
   laser.status = LASER_OFF;
@@ -108,32 +96,35 @@ void laser_init()
   #endif // MUVE_Z_PEEL
   
   laser_extinguish();
+
 }
-void laser_fire(int intensity = 100.0){
-	laser.firing = LASER_ON;
-	laser.last_firing = micros(); // microseconds of last laser firing
-	if (intensity > 100.0) intensity = 100.0; // restrict intensity between 0 and 100
-	if (intensity < 0) intensity = 0;
-
-    pinMode(LASER_FIRING_PIN, OUTPUT);
-	#if LASER_CONTROL == 1
-	  analogWrite(LASER_FIRING_PIN, labs((intensity / 100.0)*(F_CPU / LASER_PWM)));
-    #endif
-	#if LASER_CONTROL == 2
-      analogWrite(LASER_INTENSITY_PIN, labs((intensity / 100.0)*(F_CPU / LASER_PWM)));
-      digitalWrite(LASER_FIRING_PIN, LASER_ARM);
-    #endif
-
-    if (laser.diagnostics) {
-	  SERIAL_ECHOLN("Laser fired");
-	}
+void laser_fire(int intensity = 100.0)
+{
+  laser.firing = LASER_ON;
+  laser.last_firing = micros(); // microseconds of last laser firing
+  if (intensity > 100.0) intensity = 100.0; // restrict intensity between 0 and 100
+  if (intensity < 0) intensity = 0;
+  
+#if LASER_CONTROL == 1
+  Timer3.setPwmDuty(LASER_FIRING_PIN, intensity/100.0*1023);
+#endif
+#if LASER_CONTROL == 2
+  analogWrite(LASER_INTENSITY_PIN, labs((intensity / 100.0)*(F_CPU / LASER_PWM)));
+  digitalWrite(LASER_FIRING_PIN, LASER_ARM);
+#endif
+  
+  if (laser.diagnostics) {
+     SERIAL_ECHOLN("Laser fired");
+  }
 }
 void laser_extinguish(){
 	if (laser.firing == LASER_ON) {
 	  laser.firing = LASER_OFF;
 
 	  // Engage the pullup resistor for TTL laser controllers which don't turn off entirely without it.
-	  digitalWrite(LASER_FIRING_PIN, LASER_UNARM);
+
+	  Timer3.setPwmDuty(LASER_FIRING_PIN, 0);
+
 	  laser.time += millis() - (laser.last_firing / 1000);
 
 	  if (laser.diagnostics) {
