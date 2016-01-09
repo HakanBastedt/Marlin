@@ -612,9 +612,10 @@ FORCE_INLINE void trapezoid_generator_reset() {
 ISR(TIMER1_COMPA_vect) {
 
   #ifdef LASER
-  if (laser.dur != 0 && (laser.last_firing + laser.dur < micros())) {
-    if (laser.diagnostics) SERIAL_ECHOLN("Laser firing duration elapsed, in interrupt handler");
-	laser_extinguish();
+  if (laser.firing == LASER_ON && laser.dur != 0 && (laser.last_firing + laser.dur < micros())) {
+    if (laser.diagnostics) 
+      SERIAL_ECHOLN("Laser firing duration elapsed, in interrupt handler");
+    laser_extinguish();
   }
   #endif LASER
 

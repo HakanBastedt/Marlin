@@ -2168,14 +2168,16 @@ inline void gcode_G0_G1() {
     #endif //FWRETRACT
 
 #ifdef LASER_FIRE_G1
-    if (code_seen('S') && !IsStopped()) laser.intensity = (float) code_value();
-    if (code_seen('L') && !IsStopped()) laser.duration = (unsigned long) labs(code_value());
-    if (code_seen('P') && !IsStopped()) laser.ppm = (float) code_value();
-    if (code_seen('D') && !IsStopped()) laser.diagnostics = (bool) code_value();
-    if (code_seen('B') && !IsStopped()) laser_set_mode((int) code_value());
-    
-    laser.status = LASER_ON;
-    laser.fired = LASER_FIRE_G1;
+      if (laser.mode == RASTER)
+	laser_set_mode(CONTINUOUS);
+      if (code_seen('S') && !IsStopped()) laser.intensity = (float) code_value();
+      if (code_seen('L') && !IsStopped()) laser.duration = (unsigned long) labs(code_value());
+      if (code_seen('P') && !IsStopped()) laser.ppm = (float) code_value();
+      if (code_seen('D') && !IsStopped()) laser.diagnostics = (bool) code_value();
+      if (code_seen('B') && !IsStopped()) laser_set_mode((int) code_value());
+      
+      laser.status = LASER_ON;
+      laser.fired = LASER_FIRE_G1;
 #endif // LASER_FIRE_G1
 
     prepare_move();
@@ -2210,6 +2212,8 @@ inline void gcode_G2_G3(bool clockwise) {
       code_seen('J') ? code_value() : 0
     };
 #ifdef LASER_FIRE_G1
+    if (laser.mode == RASTER)
+      laser_set_mode(CONTINUOUS);
     if (code_seen('S') && !IsStopped()) laser.intensity = (float) code_value();
     if (code_seen('L') && !IsStopped()) laser.duration = (unsigned long) labs(code_value());
     if (code_seen('P') && !IsStopped()) laser.ppm = (float) code_value();
@@ -2250,29 +2254,30 @@ inline void gcode_G4() {
 }
 
 #ifdef LASER_RASTER
-    inline void gcode_G7() {
-    if (code_seen('L')) 
-      laser.raster_raw_length = int(code_value());
-    if (code_seen('$')) {
+inline void gcode_G7() 
+{
+  if (code_seen('L')) 
+    laser.raster_raw_length = int(code_value());
+  if (code_seen('$')) {
     laser.raster_direction = (bool)code_value();
     destination[Y_AXIS] = current_position[Y_AXIS] + (laser.raster_mm_per_pulse * laser.raster_aspect_ratio); // increment Y axis
-    }
-    if (code_seen('D')) 
-      laser.raster_num_pixels = base64_decode(laser.raster_data, seen_pointer+1, laser.raster_raw_length);
-    if (!laser.raster_direction) {
+  }
+  if (code_seen('D')) 
+    laser.raster_num_pixels = base64_decode(laser.raster_data, seen_pointer+1, laser.raster_raw_length);
+  if (!laser.raster_direction) {
     destination[X_AXIS] = current_position[X_AXIS] - (laser.raster_mm_per_pulse * laser.raster_num_pixels);
     if (laser.diagnostics) {
-    SERIAL_ECHO_START;
-    SERIAL_ECHOLN("Negative Raster Line");
+      SERIAL_ECHO_START;
+      SERIAL_ECHOLN("Negative Raster Line");
     }
-    } else {
+  } else {
     destination[X_AXIS] = current_position[X_AXIS] + (laser.raster_mm_per_pulse * laser.raster_num_pixels);
     if (laser.diagnostics) {
-    SERIAL_ECHO_START;
-    SERIAL_ECHOLN("Positive Raster Line");
+      SERIAL_ECHO_START;
+      SERIAL_ECHOLN("Positive Raster Line");
     }
-    }
-
+  }
+  
   laser.ppm = 1 / laser.raster_mm_per_pulse; //number of pulses per millimetre
   laser.duration = (1000000 / ( feedrate / 60)) / laser.ppm; // (1 second in microseconds / (time to move 1mm in microseconds)) / (pulses per mm) = Duration of pulse, taking into account feedrate as speed and ppm
   
@@ -2334,6 +2339,10 @@ inline void gcode_G28() {
       SERIAL_ECHOLNPGM("gcode_G28 >>>");
     }
   #endif
+
+#ifdef LASER
+    laser.status = LASER_OFF;
+#endif
 
   // Wait for planner moves to finish!
   st_synchronize();
@@ -3436,6 +3445,33 @@ inline void gcode_G92() {
   }
 
 #endif // ULTIPANEL
+
+#ifdef LASER
+inline void gcode_M3()
+{
+  if (laser.mode == RASTER)
+    laser_set_mode(CONTINUOUS);
+  if (code_seen('S') && !IsStopped()) laser.intensity = (float) code_value();
+  if (code_seen('L') && !IsStopped()) laser.duration = (unsigned long) labs(code_value());
+  if (code_seen('P') && !IsStopped()) laser.ppm = (float) code_value();
+  if (code_seen('D') && !IsStopped()) laser.diagnostics = (bool) code_value();
+  if (code_seen('B') && !IsStopped()) laser_set_mode((int) code_value());
+  
+  laser.status = LASER_ON;
+  laser.fired = LASER_FIRE_SPINDLE;      
+  //*=*=*=*=*=*
+  lcd_update();
+  
+  prepare_move();
+}
+inline void gcode_M5()
+{
+  laser.status = LASER_OFF;
+  lcd_update();
+  prepare_move();
+}
+
+#endif	
 
 /**
  * M17: Enable power on all stepper motors
@@ -5927,23 +5963,10 @@ void process_next_command() {
 
       #ifdef LASER_FIRE_SPINDLE
       case 3:  //M3 - fire laser
-	if (code_seen('S') && !IsStopped()) laser.intensity = (float) code_value();
-	if (code_seen('L') && !IsStopped()) laser.duration = (unsigned long) labs(code_value());
-	if (code_seen('P') && !IsStopped()) laser.ppm = (float) code_value();
-	if (code_seen('D') && !IsStopped()) laser.diagnostics = (bool) code_value();
-	if (code_seen('B') && !IsStopped()) laser_set_mode((int) code_value());
-	
-	laser.status = LASER_ON;
-	laser.fired = LASER_FIRE_SPINDLE;      
-	//*=*=*=*=*=*
-	lcd_update();
-    
-	prepare_move();
+	gcode_M3();
 	break;
       case 5:  //M5 stop firing laser
-        laser.status = LASER_OFF;
-	lcd_update();
-	prepare_move();
+	gcode_M5();
 	break;
      #endif // LASER_FIRE_SPINDLE
 

@@ -98,6 +98,7 @@ void laser_init()
   laser_extinguish();
 
 }
+
 void laser_fire(int intensity = 100.0)
 {
   laser.firing = LASER_ON;
@@ -117,20 +118,21 @@ void laser_fire(int intensity = 100.0)
      SERIAL_ECHOLN("Laser fired");
   }
 }
-void laser_extinguish(){
-	if (laser.firing == LASER_ON) {
-	  laser.firing = LASER_OFF;
-
-	  // Engage the pullup resistor for TTL laser controllers which don't turn off entirely without it.
-
-	  Timer3.setPwmDuty(LASER_FIRING_PIN, 0);
-
-	  laser.time += millis() - (laser.last_firing / 1000);
-
-	  if (laser.diagnostics) {
-	    SERIAL_ECHOLN("Laser extinguished");
-	  }
-	}
+void laser_extinguish()
+{
+  if (laser.firing == LASER_ON) {
+    laser.firing = LASER_OFF;
+    
+    // Engage the pullup resistor for TTL laser controllers which don't turn off entirely without it.
+    
+    Timer3.setPwmDuty(LASER_FIRING_PIN, 0);
+    
+    laser.time += millis() - (laser.last_firing / 1000);
+    
+    if (laser.diagnostics) {
+      SERIAL_ECHOLN("Laser extinguished");
+    }
+  }
 }
 void laser_set_mode(int mode){
 	switch(mode){
