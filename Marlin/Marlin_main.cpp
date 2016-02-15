@@ -2148,7 +2148,7 @@ void unknown_command_error() {
 /**
  * G0, G1: Coordinated movement of X Y Z E axes
  */
-inline void gcode_G0_G1() {
+inline void gcode_G0_G1(int codenum) {
   if (IsRunning()) {
     gcode_get_destination(); // For X Y Z E F
 
@@ -2175,9 +2175,12 @@ inline void gcode_G0_G1() {
       if (code_seen('P') && !IsStopped()) laser.ppm = (float) code_value();
       if (code_seen('D') && !IsStopped()) laser.diagnostics = (bool) code_value();
       if (code_seen('B') && !IsStopped()) laser_set_mode((int) code_value());
-      
-      laser.status = LASER_ON;
-      laser.fired = LASER_FIRE_G1;
+      if (codenum == 1) {
+        laser.status = LASER_ON;  // G1
+      } else {
+        laser.status = LASER_OFF; // Switch off during G0
+      }
+    laser.fired = LASER_FIRE_G1;
 #endif // LASER_FIRE_G1
 
     prepare_move();
@@ -3456,7 +3459,12 @@ inline void gcode_M3()
   if (code_seen('P') && !IsStopped()) laser.ppm = (float) code_value();
   if (code_seen('D') && !IsStopped()) laser.diagnostics = (bool) code_value();
   if (code_seen('B') && !IsStopped()) laser_set_mode((int) code_value());
-  
+
+#ifdef LASER_POWER_DOWN
+  digitalWrite(LASER_POWER_PIN, HIGH); // Switch on no matter what
+  analogWrite(LASER_POWER_PIN, 255); // Switch on no matter what
+#endif
+
   laser.status = LASER_ON;
   laser.fired = LASER_FIRE_SPINDLE;      
   //*=*=*=*=*=*
@@ -3466,6 +3474,10 @@ inline void gcode_M3()
 }
 inline void gcode_M5()
 {
+#ifdef LASER_POWER_DOWN
+  digitalWrite(LASER_POWER_PIN, LOW); // Switch off no matter what
+  analogWrite(LASER_POWER_PIN, 0); // Switch off no matter what
+#endif
   laser.status = LASER_OFF;
   lcd_update();
   prepare_move();
@@ -3660,6 +3672,7 @@ inline void gcode_M42() {
         break;
       }
     }
+    SERIAL_ECHOPAIR("Pin is ", pin_number);
 
     #if HAS_FAN
       if (pin_number == FAN_PIN) fanSpeed = pin_status;
@@ -5880,7 +5893,7 @@ void process_next_command() {
       // G0, G1
       case 0:
       case 1:
-        gcode_G0_G1();
+        gcode_G0_G1(codenum);
         break;
 
       // G2, G3

@@ -43,6 +43,8 @@
 #define X_MIN_PIN           3
 #define X_MAX_PIN           2
 
+#ifndef HAKANS_LASER
+
 #define Y_STEP_PIN         60
 #define Y_DIR_PIN          61
 #define Y_ENABLE_PIN       56
@@ -54,6 +56,20 @@
 #define Z_ENABLE_PIN       62
 #define Z_MIN_PIN          18
 #define Z_MAX_PIN          19
+
+#else
+#define Z_STEP_PIN         60
+#define Z_DIR_PIN          61
+#define Z_ENABLE_PIN       56
+#define Z_MIN_PIN          18
+#define Z_MAX_PIN          19
+
+#define Y_STEP_PIN         46
+#define Y_DIR_PIN          48
+#define Y_ENABLE_PIN       62
+#define Y_MIN_PIN          14
+#define Y_MAX_PIN          15
+#endif // HAKANS_LASER
 
 #define E0_STEP_PIN        26
 #define E0_DIR_PIN         28
@@ -158,9 +174,14 @@
     #if ENABLED(REPRAP_DISCOUNT_SMART_CONTROLLER)
       #define BEEPER_PIN 37
 
+#ifndef HAKANS_LASER
       #define BTN_EN1 31
       #define BTN_EN2 33
-      #define BTN_ENC 35
+#else
+      #define BTN_EN1 33
+      #define BTN_EN2 31
+#endif
+      #define BTN_ENC 33
 
       #define SD_DETECT_PIN 49
     #elif ENABLED(LCD_I2C_PANELOLU2)
