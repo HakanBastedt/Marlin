@@ -156,11 +156,16 @@
 #endif // Z_DUAL_STEPPER_DRIVERS
 
 // Same again but for Y Axis.
-//#define Y_DUAL_STEPPER_DRIVERS
+#define Y_DUAL_STEPPER_DRIVERS
 
 #if ENABLED(Y_DUAL_STEPPER_DRIVERS)
+//  #define Y_DUAL_ENDSTOPS
+
+//  #if ENABLED(Y_DUAL_ENDSTOPS)
+//    const bool Y2_MAX_ENDSTOP_INVERTING = false;
+//  #endif
   // Define if the two Y drives need to rotate in opposite directions
-  #define INVERT_Y2_VS_Y_DIR true
+//  #define INVERT_Y2_VS_Y_DIR true
 #endif
 
 // Enable this for dual x-carriage printers.

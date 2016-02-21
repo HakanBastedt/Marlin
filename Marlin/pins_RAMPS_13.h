@@ -75,10 +75,24 @@
 #define E0_DIR_PIN         28
 #define E0_ENABLE_PIN      24
 
+#ifdef Y_DUAL_STEPPER_DRIVERS
+#define Y2_STEP_PIN        36
+#define Y2_DIR_PIN         34
+#define Y2_ENABLE_PIN      30
+#define E1_STEP_PIN        -1
+#define E1_DIR_PIN         -1
+#define E1_ENABLE_PIN      -1
+#ifdef Y_DUAL_ENDSTOPS
+#define Y2_MIN_PIN         18
+#define Y2_MAX_PIN         19
+#define Z_MIN_PIN          -1
+#define Z_MAX_PIN          -1
+#endif
+#else
 #define E1_STEP_PIN        36
 #define E1_DIR_PIN         34
 #define E1_ENABLE_PIN      30
-
+#endif
 #define SDPOWER            -1
 #define SDSS               53
 #define LED_PIN            13

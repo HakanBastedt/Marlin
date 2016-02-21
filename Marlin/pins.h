@@ -236,6 +236,16 @@
   #define Z_MIN_PIN          -1
 #endif
 
+#if ENABLED(DISABLE_Y2MAX_ENDSTOP)
+  #undef Y2_MAX_PIN
+  #define Y2_MAX_PIN          -1
+#endif
+
+#if ENABLED(DISABLE_Y2MIN_ENDSTOP)
+  #undef Y2_MIN_PIN
+  #define Y2_MIN_PIN          -1
+#endif
+
 #ifndef Y2_STEP_PIN
   #define Y2_STEP_PIN      E1_STEP_PIN
   #define Y2_DIR_PIN       E1_DIR_PIN

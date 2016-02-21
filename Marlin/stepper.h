@@ -101,6 +101,12 @@ void microstep_readings();
   void Lock_z2_motor(bool state);
 #endif
 
+#if ENABLED(Y_DUAL_ENDSTOPS)
+  void In_Homing_Process(bool state);
+  void Lock_y_motor(bool state);
+  void Lock_y2_motor(bool state);
+#endif
+
 #if ENABLED(BABYSTEPPING)
   void babystep(const uint8_t axis, const bool direction); // perform a short step with a single stepper motor, outside of any convention
 #endif

@@ -307,6 +307,10 @@ bool target_direction;
   float z_endstop_adj = 0;
 #endif
 
+#if ENABLED(Y_DUAL_ENDSTOPS) && DISABLED(DELTA)
+  float y_endstop_adj = 0;
+#endif
+
 // Extruder offsets
 #if EXTRUDERS > 1
   #ifndef EXTRUDER_OFFSET_X
@@ -741,6 +745,13 @@ void setup() {
   #ifdef LASER
     laser_init();
   #endif
+
+    SERIAL_ECHOPAIR(" Y_STEP_PIN ", Y_STEP_PIN);
+    SERIAL_ECHOPAIR(" Y_DIR_PIN ", Y_DIR_PIN);
+    SERIAL_ECHOPAIR(" Y_ENABLE_PIN ", Y_ENABLE_PIN);
+    SERIAL_ECHOPAIR(" Y2_STEP_PIN ", Y2_STEP_PIN);
+    SERIAL_ECHOPAIR(" Y2_DIR_PIN ", Y2_DIR_PIN);
+    SERIAL_ECHOPAIR(" Y2_ENABLE_PIN ", Y2_ENABLE_PIN);
 
 
 }
@@ -1885,6 +1896,11 @@ static void homeaxis(AxisEnum axis) {
       if (axis == Z_AXIS) In_Homing_Process(true);
     #endif
 
+    // Set a flag for Z motor locking
+    #if ENABLED(Y_DUAL_ENDSTOPS)
+      if (axis == Y_AXIS) In_Homing_Process(true);
+    #endif
+
     // Move towards the endstop until an endstop is triggered
     destination[axis] = 1.5 * max_length(axis) * axis_home_dir;
     feedrate = homing_feedrate[axis];
@@ -1951,6 +1967,31 @@ static void homeaxis(AxisEnum axis) {
         if (lockZ1) Lock_z_motor(false); else Lock_z2_motor(false);
         In_Homing_Process(false);
       } // Z_AXIS
+    #endif
+
+    #if ENABLED(Y_DUAL_ENDSTOPS)
+      if (axis == Y_AXIS) {
+        float adj = fabs(y_endstop_adj);
+        bool lockY1;
+        if (axis_home_dir > 0) {
+          adj = -adj;
+          lockY1 = (y_endstop_adj > 0);
+        }
+        else
+          lockY1 = (y_endstop_adj < 0);
+
+        if (lockY1) Lock_y_motor(true); else Lock_y2_motor(true);
+        sync_plan_position();
+
+        // Move to the adjusted endstop height
+        feedrate = homing_feedrate[axis];
+        destination[Y_AXIS] = adj;
+        line_to_destination();
+        st_synchronize();
+
+        if (lockY1) Lock_y_motor(false); else Lock_y2_motor(false);
+        In_Homing_Process(false);
+      } // Y_AXIS
     #endif
 
     #if ENABLED(DELTA)
@@ -4507,6 +4548,14 @@ inline void gcode_M119() {
     SERIAL_PROTOCOLPGM(MSG_Z2_MAX);
     SERIAL_PROTOCOLLN(((READ(Z2_MAX_PIN)^Z2_MAX_ENDSTOP_INVERTING) ? MSG_ENDSTOP_HIT : MSG_ENDSTOP_OPEN));
   #endif
+  #if HAS_Y2_MIN
+    SERIAL_PROTOCOLPGM(MSG_Y2_MIN);
+    SERIAL_PROTOCOLLN(((READ(Y2_MIN_PIN)^Y2_MIN_ENDSTOP_INVERTING) ? MSG_ENDSTOP_HIT : MSG_ENDSTOP_OPEN));
+  #endif
+  #if HAS_Y2_MAX
+    SERIAL_PROTOCOLPGM(MSG_Y2_MAX);
+    SERIAL_PROTOCOLLN(((READ(Y2_MAX_PIN)^Y2_MAX_ENDSTOP_INVERTING) ? MSG_ENDSTOP_HIT : MSG_ENDSTOP_OPEN));
+  #endif
   #if HAS_Z_PROBE
     SERIAL_PROTOCOLPGM(MSG_Z_PROBE);
     SERIAL_PROTOCOLLN(((READ(Z_MIN_PROBE_PIN)^Z_MIN_PROBE_ENDSTOP_INVERTING) ? MSG_ENDSTOP_HIT : MSG_ENDSTOP_OPEN));
@@ -4727,7 +4776,18 @@ inline void gcode_M206() {
     SERIAL_EOL;
   }
 
-#endif // !DELTA && Z_DUAL_ENDSTOPS
+#elif ENABLED(Y_DUAL_ENDSTOPS) // !DELTA && ENABLED(Y_DUAL_ENDSTOPS)
+
+  /**
+   * M666: For Y Dual Endstop setup, set y axis offset to the y2 axis.
+   */
+  inline void gcode_M666() {
+    if (code_seen('Y')) y_endstop_adj = code_value();
+    SERIAL_ECHOPAIR("Y Endstop Adjustment set to (mm):", y_endstop_adj);
+    SERIAL_EOL;
+  }
+
+#endif // !DELTA && Z_DUAL_ENDSTOPS && Y_DUAL_ENDSTOPS
 
 #if ENABLED(FWRETRACT)
 
@@ -6204,7 +6264,7 @@ void process_next_command() {
           break;
       #endif
 
-      #if ENABLED(DELTA) || ENABLED(Z_DUAL_ENDSTOPS)
+      #if ENABLED(DELTA) || ENABLED(Z_DUAL_ENDSTOPS) || ENABLED(Y_DUAL_ENDSTOPS) 
         case 666: // M666 set delta / dual endstop adjustment
           gcode_M666();
           break;
