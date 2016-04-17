@@ -768,8 +768,8 @@ float junction_deviation = 0.1;
       int OldRange, NewRange;
       float NewValue;
       OldRange = (255 - 0);
-#define SEVEN 0
-      NewRange = (laser.rasterlaserpower - SEVEN); //7% power on my unit outputs hardly any noticable burn at F3000 on paper, so adjust the raster contrast based off 7 being the lower. 7 still produces burns at slower feed rates, but getting less power than this isn't typically needed at slow feed rates.
+#define SEVEN 6
+      NewRange = (255 - SEVEN); //7% power on my unit outputs hardly any noticable burn at F3000 on paper, so adjust the raster contrast based off 7 being the lower. 7 still produces burns at slower feed rates, but getting less power than this isn't typically needed at slow feed rates.
       NewValue = (float)(((((float)laser.raster_data[i] - 0) * NewRange) / OldRange) + SEVEN);
       
       //If less than 7%, turn off the laser tube.
@@ -780,6 +780,7 @@ float junction_deviation = 0.1;
       //      if ((i+1)%10 == 0)
       //        SERIAL_ECHOLN(" ");
       block->laser_raster_data[i] = NewValue; 
+      block->laser_raster_intensity = laser.rasterlaserpower/2.55; // When multiplied with range 0-255 => 0-100.0
     }
   } else {
     block->steps_l_1000 = 0;

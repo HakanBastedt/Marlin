@@ -99,7 +99,7 @@ void laser_init()
 
 }
 
-void laser_fire(int intensity = 100.0)
+void laser_fire(float intensity = 100.0)
 {
   laser.firing = LASER_ON;
   laser.last_firing = micros(); // microseconds of last laser firing
@@ -107,7 +107,7 @@ void laser_fire(int intensity = 100.0)
   if (intensity < 0) intensity = 0;
   
 #if LASER_CONTROL == 1
-  Timer3.setPwmDuty(LASER_FIRING_PIN, intensity/100.0*1023);
+  Timer3.setPwmDuty(LASER_FIRING_PIN, intensity*10.23);
 #endif
 #if LASER_CONTROL == 2
   analogWrite(LASER_INTENSITY_PIN, labs((intensity / 100.0)*(F_CPU / LASER_PWM)));
