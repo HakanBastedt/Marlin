@@ -4,7 +4,7 @@
 #include "boards.h"
 #include "macros.h"
 
-#define HAKANS_CO2
+#define NOOOO_HAKANS_CO2
 
 #ifdef HAKANS_CO2
 #include "Conf_lasCO2.h"

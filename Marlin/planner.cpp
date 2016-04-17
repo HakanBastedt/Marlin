@@ -749,19 +749,6 @@ float junction_deviation = 0.1;
 
 #ifdef LASER
 
-#define NL SERIAL_ECHOLN("")
-#if 0
-SERIAL_ECHOPAIR(" target[X]=", target[X_AXIS]);
-SERIAL_ECHOPAIR(" position[X]=", position[X_AXIS]);
-SERIAL_ECHOPAIR(" target[Y]=", target[Y_AXIS]);
-SERIAL_ECHOPAIR(" position[Y]=", position[Y_AXIS]);
-SERIAL_ECHOPAIR(" dx=", dx);
-SERIAL_ECHOPAIR(" dy=", dy);
-SERIAL_ECHOPAIR(" millimeters=", 1000*block->millimeters);
-SERIAL_ECHOPAIR(" ppm=", 1000*laser.ppm);
-SERIAL_ECHOPAIR(" steps_l_1000=", block->steps_l_1000);
-NL;
-#endif
   block->laser_intensity = laser.intensity;
   block->laser_duration = laser.duration;
   block->laser_status = laser.status;

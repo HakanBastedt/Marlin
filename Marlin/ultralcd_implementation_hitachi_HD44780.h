@@ -605,7 +605,7 @@ static void lcd_implementation_status_screen() {
     #endif  // EXTRUDERS > 1 || TEMP_SENSOR_BED != 0
 #endif
   #endif // LCD_WIDTH >= 20
-
+#endif // LASER
   //
   // Line 2
   //

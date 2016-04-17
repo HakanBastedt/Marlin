@@ -459,7 +459,7 @@ inline void update_endstops() {
 
           #else // !Y_DUAL_ENDSTOPS
 
-            UPDATE_ENDSTOP(Z, MAX);
+            UPDATE_ENDSTOP(Y, MAX);
 
           #endif // !Y_DUAL_ENDSTOPS
         #endif
@@ -915,6 +915,9 @@ ISR(TIMER1_COMPA_vect) {
     if (step_events_completed >= current_block->step_event_count) {
       current_block = NULL;
       plan_discard_current_block();
+#ifdef LASER
+      laser_extinguish();
+#endif
     }
   }
 }
