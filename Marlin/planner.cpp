@@ -780,8 +780,8 @@ float junction_deviation = 0.1;
       //      if ((i+1)%10 == 0)
       //        SERIAL_ECHOLN(" ");
       block->laser_raster_data[i] = NewValue; 
-      block->laser_raster_intensity = laser.rasterlaserpower/2.55; // When multiplied with range 0-255 => 0-100.0
     }
+    block->laser_raster_intensity = laser.rasterlaserpower/255.0; // When multiplied with range 0-255 => 0-100.0
   } else {
     block->steps_l_1000 = 0;
   }
