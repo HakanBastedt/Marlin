@@ -105,7 +105,17 @@ void laser_fire(float intensity = 100.0)
   laser.last_firing = micros(); // microseconds of last laser firing
   if (intensity > 100.0) intensity = 100.0; // restrict intensity between 0 and 100
   if (intensity < 0) intensity = 0;
-  
+      
+#define SEVEN 0
+  // In the case that the laserdriver need at least a certain level "SEVEN"
+  // to give anything, the intensity can be remapped to start at "SEVEN"
+  // At least some CO2-drivers need it, not sure about laserdiode drivers.
+#if SEVEN != 0
+#define OldRange (255.0 - 0.0);
+#define NewRange = (255.0 - SEVEN); 
+  intensity = intensity * NewRange / OldRange + SEVEN;
+#endif
+
 #if LASER_CONTROL == 1
   Timer3.setPwmDuty(LASER_FIRING_PIN, intensity*10.23);
 #endif
