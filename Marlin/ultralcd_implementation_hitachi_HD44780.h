@@ -577,13 +577,13 @@ static void lcd_implementation_status_screen() {
 
 #ifdef HAKANS_LASER
     lcd.setCursor(6, 0);
-    if (fanSpeed >= 100)
+    if (laser.intensity >= 100)
       lcd_printPGM(PSTR("Laser "));
-    else if (fanSpeed >= 10)
+    else if (laser.intensity >= 10)
       lcd_printPGM(PSTR("Laser  "));
     else
       lcd_printPGM(PSTR("Laser   "));
-    lcd.print(fanSpeed);
+    lcd.print((int)laser.intensity);
 
 #else 
     //
