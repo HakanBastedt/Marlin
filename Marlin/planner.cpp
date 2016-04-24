@@ -755,18 +755,18 @@ float junction_deviation = 0.1;
   block->laser_mode = laser.mode;
   
   // When operating in PULSED or RASTER modes, laser pulsing must operate in sync with movement.
-  // Calculate steps between laser firings (steps_l) and consider that when determining largest
+  // Calculate lsser steps/firings needed during this block move (steps_l) and consider this when calculating
   // interval between steps for X, Y, Z, E, L to feed to the motion control code.
   if (laser.mode == RASTER || laser.mode == PULSED) {
-    block->steps_l_1000 = labs(1000*block->millimeters*laser.ppm);
+    block->steps_l = labs(block->millimeters*laser.ppm);
     for (int i = 0; i < LASER_MAX_RASTER_LINE; i++) {
       block->laser_raster_data[i] = laser.raster_data[i];
     }
-    block->laser_raster_intensity = laser.rasterlaserpower/255.0; // When multiplied with range 0-255 => 0-100.0
+    block->laser_raster_intensity = laser.intensity/255.0; // When multiplied with range 0-255 => 0-100.0
   } else {
-    block->steps_l_1000 = 0;
+    block->steps_l = 0;
   }
-  block->step_event_count = max(block->step_event_count, block->steps_l_1000/1000);
+  block->step_event_count = max(block->step_event_count, block->steps_l);
   
   if (laser.diagnostics) {
     if (block->laser_status == LASER_ON) {

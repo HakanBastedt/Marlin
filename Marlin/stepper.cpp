@@ -64,7 +64,7 @@ static unsigned int cleaning_buffer_counter;
 #endif
 
 #ifdef LASER
-static long counter_l_1000;
+static long counter_l;
 #endif // LASER
 
 #ifdef LASER_RASTER
@@ -718,7 +718,7 @@ ISR(TIMER1_COMPA_vect) {
       counter_y = counter_z = counter_e = counter_x;
       step_events_completed = 0;
       #ifdef LASER
-      counter_l_1000 = 1000*counter_x;
+      counter_l = counter_x;
       laser.dur = current_block->laser_duration;
       #endif //LASER
 
@@ -734,15 +734,6 @@ ISR(TIMER1_COMPA_vect) {
           counter_raster = 0;
         }
       #endif // LASER_RASTER
-#define NL SERIAL_ECHOLN("")
-#if 0
-	NL;
-	SERIAL_ECHOPAIR(" last_firing=",laser.last_firing); 
-	SERIAL_ECHOPAIR(" dur=",laser.dur); 
-	SERIAL_ECHOPAIR(" steps_l_1000=",current_block->steps_l_1000); 
-	SERIAL_ECHOPAIR(" millimeters=", 1000*current_block->millimeters);NL;
-	SERIAL_ECHOPAIR(" now", micros());NL;
-#endif
 
       // #if ENABLED(ADVANCE)
       //   e_steps[current_block->active_extruder] = 0;
@@ -811,17 +802,17 @@ ISR(TIMER1_COMPA_vect) {
       #if DISABLED(ADVANCE)
         STEP_IF_COUNTER(e, E);
       #endif
-      // steps_l_1000 = step count between laser firings in 1/1000's
+      // steps_l = laser firings needed in this block
       //
       #ifdef LASER
-	counter_l_1000 += current_block->steps_l_1000;
-	if (counter_l_1000 > 0) {
+	counter_l += current_block->steps_l;
+	if (counter_l > 0) {
           if (current_block->laser_mode == PULSED && current_block->laser_status == LASER_ON) { // Pulsed Firing Mode
             laser_fire(current_block->laser_intensity);
 	    if (laser.diagnostics) {
               SERIAL_ECHOPAIR("X: ", counter_x);
 	      SERIAL_ECHOPAIR("Y: ", counter_y);
-	      SERIAL_ECHOPAIR("L: ", counter_l_1000);
+	      SERIAL_ECHOPAIR("L: ", counter_l);
             }
           }
       #ifdef LASER_RASTER
@@ -835,7 +826,7 @@ ISR(TIMER1_COMPA_vect) {
 	    counter_raster++;
 	  }
       #endif // LASER_RASTER
-		  counter_l_1000 -= 1000*current_block->step_event_count;
+		  counter_l -= current_block->step_event_count;
 		  }
 		  if (current_block->laser_duration != 0 && (laser.last_firing + current_block->laser_duration < micros())) {
 			if (laser.diagnostics) SERIAL_ECHOLN("Laser firing duration elapsed, in interrupt fast loop");
