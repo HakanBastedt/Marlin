@@ -907,7 +907,9 @@ ISR(TIMER1_COMPA_vect) {
       current_block = NULL;
       plan_discard_current_block();
 #ifdef LASER
-      laser_extinguish();
+      if (current_block->laser_mode == CONTINUOUS && current_block->laser_status == LASER_ON) {
+        laser_extinguish();
+      }
 #endif
     }
   }
