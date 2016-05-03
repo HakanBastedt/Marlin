@@ -21,6 +21,8 @@
 #define LASER_H
 
 #include <inttypes.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
 #include "Configuration.h"
 
 // split into planned and status
@@ -57,6 +59,7 @@ extern laser_t laser;
 
 void laser_init();
 void laser_fire(float intensity);
+void laser_pulse(uint32_t ulValue, unsigned long usec);
 void laser_extinguish();
 void laser_update_lifetime();
 void laser_set_mode(int mode);

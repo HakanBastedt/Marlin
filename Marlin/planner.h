@@ -67,15 +67,15 @@ typedef struct {
     unsigned long e_to_p_pressure;
   #endif
   #ifdef LASER
-	uint8_t laser_mode; // CONTINUOUS, PULSED, RASTER
-	bool laser_status; // LASER_OFF, LASER_ON
+    uint8_t laser_mode; // CONTINUOUS, PULSED, RASTER
+    bool laser_status; // LASER_OFF, LASER_ON
     float laser_ppm; // pulses per millimeter, for pulsed and raster firing modes
-    unsigned long laser_duration; // laser firing duration in microseconds, for pulsed and raster firing modes
+    unsigned long laser_duration; // laser firing duration in microseconds
     long steps_l; // Number of laser firings needed during this block move
     int laser_intensity; // Laser firing instensity in clock cycles for the PWM timer
     #ifdef LASER_RASTER
       unsigned char laser_raster_data[LASER_MAX_RASTER_LINE]; 
-      float laser_raster_intensity;
+      float laser_raster_intensity_factor;
     #endif // LASER_RASTER
   #endif // LASER
   volatile char busy;
