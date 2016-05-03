@@ -750,19 +750,23 @@ float junction_deviation = 0.1;
 #ifdef LASER
 
   block->laser_intensity = laser.intensity;
-  block->laser_duration = laser.duration;
+  block->laser_duration = laser.duration; // Length of pulse in microseconds
   block->laser_status = laser.status;
   block->laser_mode = laser.mode;
   
   // When operating in PULSED or RASTER modes, laser pulsing must operate in sync with movement.
-  // Calculate lsser steps/firings needed during this block move (steps_l) and consider this when calculating
+  // Calculate laser pulses needed during this block move (steps_l) and consider this when calculating
   // interval between steps for X, Y, Z, E, L to feed to the motion control code.
   if (laser.mode == RASTER || laser.mode == PULSED) {
+    // Optimizing. Move calculations here rather than in stepper isr
+    static const float Factor = F_CPU/(LASER_PWM*2*100.0*255.0); 
+    block->laser_raster_intensity_factor = laser.intensity * Factor; 
     block->steps_l = labs(block->millimeters*laser.ppm);
-    for (int i = 0; i < LASER_MAX_RASTER_LINE; i++) {
-      block->laser_raster_data[i] = laser.raster_data[i];
+    if (laser.mode == RASTER) {
+      for (int i = 0; i < LASER_MAX_RASTER_LINE; i++) {
+	block->laser_raster_data[i] = laser.raster_data[i];
+      }
     }
-    block->laser_raster_intensity = laser.intensity/255.0; // When multiplied with range 0-255 => 0-100.0
   } else {
     block->steps_l = 0;
   }
