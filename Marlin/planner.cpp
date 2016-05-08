@@ -569,10 +569,10 @@ float junction_deviation = 0.1;
   block->steps[E_AXIS] /= 100;
   block->step_event_count = max(block->steps[X_AXIS], max(block->steps[Y_AXIS], max(block->steps[Z_AXIS], block->steps[E_AXIS])));
 
-#ifndef LASER
-  // Bail if this is a zero-length block
-  if (block->step_event_count <= dropsegments) return;
-#endif
+  #ifndef LASER 
+    // Bail if this is a zero-length block
+    if (block->step_event_count <= dropsegments) return;
+  #endif
 
   block->fan_speed = fanSpeed;
   #if ENABLED(BARICUDA)
@@ -748,7 +748,6 @@ float junction_deviation = 0.1;
   }
 
 #ifdef LASER
-
   block->laser_intensity = laser.intensity;
   block->laser_duration = laser.duration; // Length of pulse in microseconds
   block->laser_status = laser.status;

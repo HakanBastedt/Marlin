@@ -120,7 +120,7 @@
 //#define CUSTOM_MENDEL_NAME "Laser Cutter"
 #define LASER_WATTS 2.0
 #define LASER_DIAMETER 0.1 // milimeters
-#define LASER_PWM 20000 // hertz
+#define LASER_PWM 2000 // hertz
 #define LASER_FOCAL_HEIGHT 74.50 // z axis position at which the laser is focused
 
 // @section temperature
