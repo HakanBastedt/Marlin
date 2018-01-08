@@ -880,13 +880,13 @@ ISR(TIMER1_COMPA_vect) {
 
     // If current block is finished, reset pointer
     if (step_events_completed >= current_block->step_event_count) {
-      current_block = NULL;
-      plan_discard_current_block();
 #ifdef LASER
       if (current_block->laser_mode == CONTINUOUS && current_block->laser_status == LASER_ON) {
         laser_extinguish();
       }
 #endif
+      current_block = NULL;
+      plan_discard_current_block();
     }
   }
 }
