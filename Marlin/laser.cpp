@@ -160,7 +160,6 @@ void laser_init()
 
 void laser_fire(float intensity = 100.0)
 {
-  return;
   laser.firing = LASER_ON;
   laser.last_firing = micros(); // microseconds of last laser firing
   if (intensity > 100.0) intensity = 100.0; // restrict intensity between 0 and 100
