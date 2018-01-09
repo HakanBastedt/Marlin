@@ -1,4 +1,4 @@
-# Marlin 3D Printer Firmware with full laser functionlatity
+# Marlin 3D Printer Firmware with full laser functionality
 
 Laser functionality builds on https://github.com/TurnkeyTyranny/buildlog-lasercutter-marlin
 
