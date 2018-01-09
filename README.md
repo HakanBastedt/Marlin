@@ -1,4 +1,49 @@
-# Marlin 3D Printer Firmware
+# Marlin 3D Printer Firmware with full laser functionlatity
+
+Laser functionality builds on https://github.com/TurnkeyTyranny/buildlog-lasercutter-marlin
+
+Laser modes
+- Continuous
+- Pulsed
+- Raster
+
+M649 command to set options
+
+Control laser
+G1 S30  => On with G1, off with G0, intensity 30
+M3/M5  => On/Off
+G7  => Cut raster of encoded raster b/w
+M649 S0 => Laser off. Use Sx to set intesity for G1 movements
+           or override at every G1 like G1 X.. Y.. S10
+Laser intensity is in the range 0-100.
+
+Laser intensity vs speed
+The energy a certain point on the workpiece receives depends on
+the laser intensity and the travel velocity. When accelerating
+the laser head this will lead to uneven energy => uneven laser marks
+and engravings unless handled.
+In continuous laser mode, this is not handled. This leads to more energy
+at the areas where the laser head accelerates. Using continuous mode
+for engraving a picture will lead to darker regions at the edges of the
+engraving.
+In pulsed and raster mode this is handled in a way that the surface
+receives an even energy per area regardless of any difference in speed
+compared to the F setting. Engraved pictures will have a uniform grayscale
+level even at the edges. This is what one would expect really.
+
+The "laser pin" is D5 on the 2560. At this point this is hardcoded,
+make sure to use that pin.
+
+Two timers are used, Timer 3 for laser intensity pwm,
+Timer 4 for pulse length control.
+These timers can not be used for any other purpose.
+
+
+==================================
+
+
+Here is the original readme:
+
 <img align="top" width=175 src="Documentation/Logo/Marlin%20Logo%20GitHub.png" />
  Additional documentation can be found in [our wiki](https://github.com/MarlinFirmware/Marlin/wiki/Main-Page).
 
